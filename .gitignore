@@ -1,0 +1,9 @@
+newphotos/
+oldphotos/
+other/
+*.pyc
+*.txt
+*.db
+*.swp
+*.swo
+.gitignore.swp
