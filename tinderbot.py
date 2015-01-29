@@ -1,6 +1,5 @@
 import json, time, re, sys, datetime, random
 import requests, signal, argparse
-from pytz import timezone
 from error import Error
 from db import db
 from tinder import tinder
@@ -88,7 +87,7 @@ def new_worker(user, messages, page):
                         fb_user.upload_picture(new_photos[1])
                         fb_user.upload_picture(new_photos[2])
 
-                        if platform.system() != Windows:
+                        if platform.system() != 'Windows':
                             shutil.move(new_photos[0], new_photos[0].replace('newphotos/', 'oldphotos/'))
                             shutil.move(new_photos[1], new_photos[1].replace('newphotos/', 'oldphotos/'))
                             shutil.move(new_photos[2], new_photos[2].replace('newphotos/', 'oldphotos/'))

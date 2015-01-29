@@ -11,7 +11,7 @@ class db():
 
 	def save_like(self, id):
 		sql_cursor = self.sqlite.cursor()
-		sql_cursor.execute("INSERT INTO likes VALUES ('"+id+"')")
+		sql_cursor.execute("INSERT OR IGNORE INTO likes VALUES ('"+id+"')")
 		self.sqlite.commit()
 
 	def save_user(self, fb_id, fb_name, tinder_id, tinder_token, tinder_created_date):

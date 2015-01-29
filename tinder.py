@@ -27,7 +27,6 @@ SLEEP_MESSAGE_PERIOD = 60
 SLEEP_FORBIDDEN = 5
 SLEEP_BEFORE_ANSWERING = 5*60
 MAX_MESSAGES_RESPONSES = 40
-FORGET_LIKING = False
 
 class tinder():
 	token = ''
@@ -83,12 +82,16 @@ class tinder():
 	def like(self, id):
 		like_response = self.get('/like/' + str(id))
 		if like_response.status_code == 200:
+                    try:
 			if json.loads(like_response.text)['match']:
 				print("Liked, match found, user id = " + str(id))
 				return True
 			else:
 				print("Liked, match not found, user id = " + str(id))
 				return True
+                    except ValueError:
+                        print('Error decoding json response')
+                        return False
 		else:
 			raise Error(like_response.status_code)
 
@@ -119,7 +122,11 @@ class tinder():
 				if use_token:
 					headers.update({"X-Auth-Token" : self.token})
 
-				return self.web_session.get(self.base_url + url, headers=headers, verify=False, timeout=120)
+				result = self.web_session.get(self.base_url + url, headers=headers, verify=False, timeout=120)
+                                if result.status_code == 500 or result.status_code == 504:
+                                    raise requests.exceptions.ConnectionError
+                                else:
+                                    return result
 
 			except (requests.exceptions.ConnectionError,requests.exceptions.Timeout) as e:
 				if i == (self.MAX_RETRY-1):
@@ -140,11 +147,20 @@ class tinder():
 		for i in range(self.MAX_RETRY):
 			try:
 				if not use_token:
-					return self.web_session.post(self.base_url + url, data=payload, headers=generic_post_tinder_headers, verify=False, timeout=120)
+					result = self.web_session.post(self.base_url + url, data=payload, headers=generic_post_tinder_headers, verify=False, timeout=120)
+                                        if result.status_code == 500 or result.status_code == 504:
+                                            raise requests.exceptions.ConnectionError
+                                        else:
+                                            return result
 				else:
 					headers = generic_post_tinder_headers
 					headers.update({"X-Auth-Token" : self.token})
-					return self.web_session.post(self.base_url + url, data=payload, headers=headers, verify=False, timeout=120)
+					result = self.web_session.post(self.base_url + url, data=payload, headers=headers, verify=False, timeout=120)
+                                        if result.status_code == 500  or result.status_code == 504:
+                                            raise requests.exceptions.ConnectionError
+                                        else:
+                                            return result
+
 			except (requests.exceptions.ConnectionError,requests.exceptions.Timeout) as e:
 				if i == (self.MAX_RETRY-1):
 					raise e
@@ -184,12 +200,12 @@ class tinder():
                                                     try:
                                                             if (self.likes_counter % self.DISLIKE_EACH) == 0:
                                                                     if self.dislike(user['_id']):
-                                                                            self.likes_counter = self.likes_counter + 1
+                                                                            self.likes_counter += 1
                                                                             print('Dislike done: '+str(self.likes_counter))
                                                                             self.sql_lite.save_like(user['_id'])
                                                             else:
                                                                     if self.like(user['_id']):
-                                                                            self.likes_counter = self.likes_counter + 1
+                                                                            self.likes_counter += 1
                                                                             print('Likes done: ' +str(self.likes_counter))
                                                                             self.sql_lite.save_like(user['_id'])
                                                             if (self.likes_counter % SLEEP_LIKE_PERIOD) == 0:
@@ -213,7 +229,8 @@ class tinder():
 		updates_response = self.post('/updates', payload)
 		if updates_response.status_code == 200:
 			#Decode matches
-			json_decoded_response = json.loads(updates_response.text)
+                    try:
+                        json_decoded_response = json.loads(updates_response.text)
 			print('Matches: ' + str(len(json_decoded_response['matches'])))
 			for match in json_decoded_response['matches']:
 				print('Length messages: ' + str(len(match['messages'])))
@@ -257,9 +274,12 @@ class tinder():
 							if e == 401:
 								print('Cant use the token to respond anymore')
 								raise Error(401)
-
-				#Sleep some time between messages
+                                #Sleep some time between messages
 				time.sleep(random.randrange(SLEEP_MESSAGE_MIN, SLEEP_MESSAGE_MAX))
+
+                    except ValueError:
+                        print('Error decoding the messages response')
+
 		else:
 			raise Error(updates_response.status_code)
 

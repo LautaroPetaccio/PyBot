@@ -6,7 +6,8 @@ from error import Error
 
 generic_facebook_headers = {"Accept" : "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
  "Accept-Encoding" : "gzip, deflate", "Accept-Language" : "en-US,en;q=0.5",
- "User-Agent" : "Mozilla/5.0 (Linux; Android 4.0.4; Galaxy Nexus Build/IMM76B) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.133 Mobile Safari/535.19",
+ #"User-Agent" : 'Mozilla/5.0 (Linux; Android 4.4.2; SAMSUNG-SGH-I337 Build/KOT49H) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/33.0.1750.170 Mobile Safari/537.36',
+ "User-Agent" : 
  "Connection" : "Keep-Alive"}
 
 #Compiled regex
@@ -18,8 +19,8 @@ li_regex = re.compile('.*"li" value="(.*?)".*', re.DOTALL)
 fb_dtsg_regex = re.compile('.*name="fb_dtsg" value="(.*?)".*', re.DOTALL)
 mobile_fb_dtsg_regex = re.compile('.*name=\\\\\"fb_dtsg\\\\" value=\\\\"(\w*)', re.DOTALL)
 access_token_regex = re.compile('.*access_token=(.*?)&expires.*',re.DOTALL)
-#name_regex = re.compile('.*</a> \((.*)\)</span>.*',re.DOTALL)
-name_regex = re.compile('.*profilePicture profpic\\\\" aria-label=\\\\"(\w+\s\w+)', re.DOTALL)  
+name_regex = re.compile('.*</a> \((.*)\)</span>.*',re.DOTALL)
+#name_regex = re.compile('.*profilePicture profpic\\\\" aria-label=\\\\"(\w+\s\w+)', re.DOTALL)  
 revision_regex = re.compile('.*{"revision":(\d*),.*', re.DOTALL)
 user_id_regex = re.compile('.*{"USER_ID":\"(\d.*)\","ACCOUNT_ID":', re.DOTALL)
 user_page_regex = re.compile('.*<a href="/(.*)?v=photos', re.DOTALL)
@@ -44,7 +45,6 @@ class facebook():
 		for i in range(self.MAX_RETRY):
 			try:
 				post_headers = generic_facebook_headers
-				#post_headers.update({"Content-Type" : "application/x-www-form-urlencoded"})
 				post_headers.update(headers)
 				if(mobile):
 					req_url = self.base_url_mobile + url
@@ -197,7 +197,8 @@ class facebook():
             #f = open('home_verification.html', 'w')
             #f.write(home_response_content.encode('utf-8'))
             #f.close()
-	    fb_dstg_match = mobile_fb_dtsg_regex.match(home_response_content)
+	    #fb_dstg_match = mobile_fb_dtsg_regex.match(home_response_content)
+            fb_dstg_match = fb_dtsg_regex.match(home_response_contenit)
             if fb_dstg_match: 
                 payload = {'fb_dtsg' : fb_dstg_match.group(1), 'charset_test' : '%E2%82%AC%2C%C2%B4%2C%E2%82%AC%2C%C2%B4%2C%E6%B0%B4%2C%D0%94%2C%D0%84'}
                 files = {'pic' : open(path, 'rb')}
@@ -219,16 +220,17 @@ class facebook():
                 raise Error(editbirthday_response.status_code)
 
             editbirthday_text_response = editbirthday_response.text
-            privacy_regex = re.compile('.*privacy\[(\d+)\]" value="(\d+)', re.DOTALL)
-            privacy_regex_match = privacy_regex.match(editbirthday_text_response)
-            if not privacy_regex_match:
-                f = open('editbirthday.html', 'w')
-                f.write(editbirthday_text_response.encode('utf-8'))
-                f.close()
-                raise Error('Privacy regex was not found changing date')
+            #Apparently not necessesary
+            #privacy_regex = re.compile('.*privacy\[(\d+)\]" value="(\d+)', re.DOTALL)
+            #privacy_regex_match = privacy_regex.match(editbirthday_text_response)
+            #if not privacy_regex_match:
+            #    f = open('editbirthday.html', 'w')
+            #    f.write(editbirthday_text_response.encode('utf-8'))
+            #    f.close()
+            #    raise Error('Privacy regex was not found changing date')
 
-            privacy = 'privacy[' + privacy_regex_match.group(1) + ']'
-            privacy_val = privacy_regex_match.group(2)
+            #privacy = 'privacy[' + privacy_regex_match.group(1) + ']'
+            #privacy_val = privacy_regex_match.group(2)
 
             fb_dtsg_regex_match = fb_dtsg_regex.match(editbirthday_text_response)
             if not fb_dtsg_regex_match:
@@ -236,8 +238,8 @@ class facebook():
 
             dstg = fb_dtsg_regex_match.group(1)
             payload = {'charset_test' : '%E2%82%AC%2C%C2%B4%2C%E2%82%AC%2C%C2%B4%2C%E6%B0%B4%2C%D0%94%2C%D0%84',
-                    'day' : day, 'month' : month, 'year' : year, 'fb_dtsg' : dstg, 'type' : 'basic', 'edit' :'birthday',
-                    privacy : privacy_val}
+                    'day' : day, 'month' : month, 'year' : year, 'fb_dtsg' : dstg, 'type' : 'basic', 'edit' :'birthday'}
+                    #privacy : privacy_val}
 
             editbirthday_response = self.post('/a/editprofile.php?ref=bookmark', payload, mobile=True)
             if editbirthday_response.status_code != 200:
